@@ -6,3 +6,5 @@ reportlab
 pyinstaller
 pysimplegui
 colorama
+bs4
+pytz

@@ -4,9 +4,11 @@ import sys
 from hashlib import sha256
 
 import requests
+import pytz as pytz
 from colorama import Fore, Style, init
 
 from utils.urls import *
+from utils.fetchOTP import fetchOTP
 
 init(convert=True)
 
@@ -38,7 +40,7 @@ else:
         winsound.Beep(freq, duration)
 
 
-def generateTokenOTP(mobile, request_header):
+def generateTokenOTP(mobile, request_header, autoOTPCapture, email, password):
     """
     This function generate OTP and returns a new token
     """
@@ -57,6 +59,7 @@ def generateTokenOTP(mobile, request_header):
                 "mobile": mobile,
                 "secret": "U2FsdGVkX1+z/4Nr9nta+2DrVJSv7KS6VoQUSQ1ZXYDx/CJUkWxFYG6P3iM/VW+6jLQ9RDQVzp/RcZ8kbT41xw==",
             }
+            currenttime = datetime.datetime.now(pytz.utc)
             txnId = requests.post(url=OTP_PRO_URL, json=data, headers=request_header)
 
             if txnId.status_code == 200:
@@ -68,9 +71,17 @@ def generateTokenOTP(mobile, request_header):
                 txnId = txnId.json()["txnId"]
 
                 print(f"{Fore.YELLOW}", end="")
-                OTP = input(
-                    "Enter OTP (If you don't recieve OTP in 2 minutes, Press Enter to Retry): "
-                )
+
+                if autoOTPCapture:
+                    OTP = fetchOTP(currenttime, email, password)
+                    if OTP == '':
+                        print("\nUnable to fetch the OTP in 2 minutes. Retrying manually. ")
+                        generateTokenOTP(mobile, request_header, False, email, password)
+                else:
+                    OTP = input(
+                        "Enter OTP (If you don't recieve OTP in 2 minutes, Press Enter to Retry): "
+                    )
+
                 print(f"{Fore.RESET}", end="")
                 if OTP:
                     data = {

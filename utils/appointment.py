@@ -55,7 +55,6 @@ def generateCaptcha(request_header):
     print(f"{Fore.RESET}", end="")
 
     if resp.status_code == 200:
-        # captchaBuilder(resp.json())
         return captchaBuilder(resp.json())
 
 

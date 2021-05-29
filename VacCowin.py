@@ -73,13 +73,36 @@ def main():
             "referer": "https://selfregistration.cowin.gov.in/",
         }
 
+        print(
+            "\n=================================== IMPORTANT ===================================\n"
+        )
+        print("This script comes with a automatic OTP fetcher. To enable this feature you need to install \n"
+              "SMSForwarder.apk from https://github.com/Anwit/SMSForwarder in your Android Mobile. \n"
+              "This App help to fetch CoWin OTP and forward it to specified email. This script will then fetch \n"
+              "the OTP from your email. Without this feature you need to enter the OTP manually every 15 mins \n"
+              "(default timeout for CoWin OTP)\n")
+        try_file = input("\nDo you want to enable autoOTPCapture feature? (y/n Default n): ")
+        try_file = try_file if try_file else "n"
+        
+        email = ''
+        password = ''
+        if try_file == "y":
+            email = input("\nEnter email id from where you want to fetch the OTP: ")
+            password = input("\nEnter password: ")
+            autoOTPCapture = True
+        elif try_file == "n":
+            autoOTPCapture = False
+        else:
+            print("\nInvalid input. Not enabling autoOTPCapture feature.\n")
+            autoOTPCapture = False
+
         if args.token:
             token = args.token
         else:
             print(f"{Fore.YELLOW}", end="")
             mobile = input("Enter the Registered Mobile Number: ")
             print(f"{Fore.RESET}", end="")
-            token = generateTokenOTP(mobile, base_request_header)
+            token = generateTokenOTP(mobile, base_request_header, autoOTPCapture, email, password)
 
         request_header = copy.deepcopy(base_request_header)
         request_header["Authorization"] = f"Bearer {token}"
@@ -166,26 +189,31 @@ def main():
                 print(f"{Fore.RESET}", end="")
                 token_valid = False
 
-                print(f"{Fore.YELLOW}", end="")
-                tryOTP = input("Do you want to try for a new Token? (y/n Default y): ")
-                for i in range(10, 0, -1):
-                    print(f"{Fore.RED}", end="")
-                    msg = f"Wait for {i} seconds.."
-                    print(msg, end="\r", flush=True)
-                    print(f"{Fore.RESET}", end="")
-                    sys.stdout.flush()
-                    time.sleep(1)
-                if tryOTP.lower() == "y" or not tryOTP:
-                    if not mobile:
-                        print(f"{Fore.YELLOW}", end="")
-                        mobile = input("Enter the Registered Mobile Number: ")
-                    token = generateTokenOTP(mobile, base_request_header)
+                if autoOTPCapture:
+                    print("\nTrying to fetch another OTP....")
+                    token = generateTokenOTP(mobile, base_request_header, autoOTPCapture, email, password)
                     token_valid = True
                 else:
-                    print(f"{Fore.RED}", end="")
-                    print("Exiting the Script...")
-                    os.system("pause")
-                    print(f"{Fore.RESET}", end="")
+                    print(f"{Fore.YELLOW}", end="")
+                    tryOTP = input("Do you want to try for a new Token? (y/n Default y): ")
+                    for i in range(1, 0, -1):
+                        print(f"{Fore.RED}", end="")
+                        msg = f"Wait for {i} seconds.."
+                        print(msg, end="\r", flush=True)
+                        print(f"{Fore.RESET}", end="")
+                        sys.stdout.flush()
+                        time.sleep(1)
+                    if tryOTP.lower() == "y" or not tryOTP:
+                        if not mobile:
+                            print(f"{Fore.YELLOW}", end="")
+                            mobile = input("Enter the Registered Mobile Number: ")
+                        token = generateTokenOTP(mobile, base_request_header, autoOTPCapture, email, password)
+                        token_valid = True
+                    else:
+                        print(f"{Fore.RED}", end="")
+                        print("Exiting the Script...")
+                        os.system("pause")
+                        print(f"{Fore.RESET}", end="")
 
     except Exception as e:
         print(f"{Fore.RED}", end="")
